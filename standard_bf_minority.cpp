@@ -11,7 +11,7 @@ using namespace chrono;
 
 int main(){
     size_t bad_cnt = 0;
-    double targetFPR = 0.07;
+    double targetFPR = 0.09;
     
     ifstream badfile("bad_urls.txt");
     string url;
@@ -28,9 +28,14 @@ int main(){
     ifstream fl("test_labels.txt");
 
     size_t totalNeg = 0,falsePos = 0;
+    size_t totalqueries =0;
     string label_str;
     int label;
+
+    auto start = high_resolution_clock::now();
+
     while(getline(fu,url) &&getline(fl, label_str)){
+        totalqueries++;
         bool result;
         label = stoi(label_str);
         result = standardBF.contains(url);
@@ -40,10 +45,20 @@ int main(){
         }
         
     }
+
+    auto end = high_resolution_clock::now();
+
     double fpr = totalNeg? (double) falsePos/totalNeg:0.0;
+    double duration = duration_cast<nanoseconds>(end-start).count();
+    double avgQueryTime = duration/totalqueries;
+    double bitsPerElement = double(standardBF.getSize())/bad_cnt;
+    double sizeofBf = standardBF.getSize()/(8*1024.0 * 1024.0);
 
     cout << "FPR=" << fpr << endl;
-    cout << "Size=" << standardBF.getSize()/(8*1024.0 * 1024.0) << endl;
+    cout << "Size=" << sizeofBf << endl;
+    cout << "bits/element= " << bitsPerElement << endl;
+    cout << "avg_query_time_(nanoseconds)= " << avgQueryTime << endl;
+
 
     return 0;
 }

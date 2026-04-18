@@ -17,7 +17,9 @@ public:
     BloomFilter(size_t size, size_t num_hashes);
     BloomFilter(size_t n, double targetFPR);
     void insert(const string &key);
+    void insert_batch(const vector<string> &keys);
     bool contains(const string &key) const;
+    vector<uint8_t> query_batch(const vector<string> &keys) const;
     void clear();
     size_t getSize() const;
 

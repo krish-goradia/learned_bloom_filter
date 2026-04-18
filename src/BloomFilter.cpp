@@ -9,8 +9,11 @@ using namespace std;
 // to run g++ main.cpp src/BloomFilter.cpp utils/xxhash.c -Iutils -Iinclude -o main
 BloomFilter::BloomFilter(size_t size, size_t num_hashes) : m(size),k(num_hashes),bits((size+63)/64,0) {}
 BloomFilter::BloomFilter(size_t n, double targetFPR){
-    m = -(n*log(targetFPR))/(log(2)*log(2));
-    k = (m/n)*log(2);
+    const double ln2 = log(2);
+    double m_real = -(n*log(targetFPR))/(ln2*ln2);
+    double k_real = (m_real/n)*ln2;
+    k = ceil(k_real);
+    m = ceil(m_real);
     if(k==0) k = 1;
     bits.resize((m+63)/64,0);
 }
@@ -42,6 +45,22 @@ bool BloomFilter::contains(const string &key) const{
         if(!getBit(idx)) return false;
     }
     return true;
+}
+
+void BloomFilter:: insert_batch(const vector<string> &keys){
+    size_t n = keys.size();
+    for(size_t i = 0;i<n;i++){
+        insert(keys[i]);
+    }
+}
+
+vector<uint8_t> BloomFilter::query_batch(const vector<string> &keys) const{
+    size_t n = keys.size();
+    vector<uint8_t> results(n);
+    for(size_t i = 0;i<n;i++){
+        results[i] = contains(keys[i]);
+    }
+    return results;
 }
 
 void BloomFilter::clear(){

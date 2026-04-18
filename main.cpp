@@ -11,7 +11,7 @@ using namespace chrono;
 
 int main(){
     size_t n = 1e6;
-    double targetFPR = 0.01;
+    double targetFPR = 0.07;
     
     BloomFilter bf(n,targetFPR);
     vector<uint64_t> insertSet;
