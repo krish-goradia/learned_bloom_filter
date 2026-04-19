@@ -6,6 +6,14 @@
 #include<string>
 using namespace std;
 
+struct BFStats{
+    size_t memory_bits;
+    double bits_per_element;
+    double avg_latency_ns;
+    double throughput_qps;
+};
+
+
 class BloomFilter{
 private:
     size_t m,k;
@@ -21,7 +29,11 @@ public:
     bool contains(const string &key) const;
     vector<uint8_t> query_batch(const vector<string> &keys) const;
     void clear();
-    size_t getSize() const;
+    size_t getTheoreticalBits() const;
+    size_t getMemoryBytes() const;
+    size_t getMemoryBits() const;
+    double getBitsPerElement(size_t n) const;
+    BFStats benchmark(const vector<string>&testSet,size_t n) const;
 
 };
 
