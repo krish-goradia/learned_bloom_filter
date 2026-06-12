@@ -1,4 +1,4 @@
-TARGET_FPR = 0.001
+TARGET_FPR = 0.1
 
 N_FEATURES = [2**10, 2**12, 2**14,2**11]
 
