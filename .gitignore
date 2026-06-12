@@ -4,4 +4,3 @@ build/
 *.pkl
 *.pyc
 __pycache__/
-results/
