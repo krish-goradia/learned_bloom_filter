@@ -1,6 +1,7 @@
 #include<pybind11/pybind11.h>
 #include<pybind11/stl.h>
 #include "../include/BloomFilter.h"
+#include "../include/Vectorizer.h"
 
 namespace py = pybind11;
 
@@ -25,5 +26,22 @@ PYBIND11_MODULE(bloom,m) {
         .def("getMemoryBytes",&BloomFilter::getMemoryBytes)
         .def("getBitsPerElement",&BloomFilter::getBitsPerElement)
         .def("benchmark",&BloomFilter::benchmark);
+    
+    py::class_<CSRMatrix>(m, "CSRMatrix")
+    .def_readonly("data",    &CSRMatrix::data)
+    .def_readonly("indices", &CSRMatrix::indices)
+    .def_readonly("indptr",  &CSRMatrix::indptr)
+    .def_readonly("n_rows",  &CSRMatrix::n_rows)
+    .def_readonly("n_cols",  &CSRMatrix::n_cols);
+
+    py::class_<ScoredResult>(m, "ScoredResult")
+        .def_readonly("probs",           &ScoredResult::probs)
+        .def_readonly("avg_latency_ns",  &ScoredResult::avg_latency_ns)
+        .def_readonly("throughput_qps",  &ScoredResult::throughput_qps);
+
+    py::class_<Vectorizer>(m, "Vectorizer")
+        .def(py::init<int,int,int>(), py::arg("n_features"), py::arg("min_n"), py::arg("max_n"))
+        .def("transform",           &Vectorizer::transform)
+        .def("transform_and_score", &Vectorizer::transform_and_score);
 
 }
