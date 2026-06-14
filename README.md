@@ -123,7 +123,7 @@ scikit-learn's `HashingVectorizer` with default settings: word-level tokenisatio
 
 `HashingVectorizer(analyzer='char', ngram_range=(3,3))`. A URL of length L produces L−2 trigrams, capturing subword patterns like `.php`, `/admin/`, or `://x` that word tokens miss entirely. This substantially improves model quality — fewer training FNs, smaller backup BF — but at a steep latency cost.
 
-The root cause is the CSR matrix structure. Character trigrams activate an average of ~160 per row vs  ~6 for word tokens. scikit-learn's `transform` and `predict_proba` operate on the full test batch, exploiting NumPy/BLAS parallelism. The reported ns/query is therefore an **amortised batch average**, not true per-query online latency — a real serving system processing one URL at a time would be significantly slower.
+The root cause is the CSR matrix structure. Character trigrams activate an average of ~160 per row vs  ~6 for word tokens. scikit-learn's `transform` and `predict_proba` operate on the full test batch. The reported ns/query is therefore an **amortised batch average**, not true per-query online latency — a real serving system processing one URL at a time would be significantly slower.
 
 | Metric | Value |
 |---|---|

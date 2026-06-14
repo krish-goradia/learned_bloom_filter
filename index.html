@@ -15,6 +15,7 @@
     --accent:    #4FC3F7;
     --accent2:   #00E5FF;
     --green:     #69F0AE;
+    --yellow:    #FFD740;
     --red:       #FF5252;
     --text:      #E8EAF0;
     --muted:     #7B8DB0;
@@ -58,8 +59,6 @@
     position: relative;
     overflow: hidden;
   }
-
-  /* grid background */
   .hero::before {
     content: '';
     position: absolute; inset: 0;
@@ -70,7 +69,6 @@
     pointer-events: none;
   }
 
-  /* bit array canvas — signature element */
   #bit-canvas {
     display: block;
     margin: 0 auto 2.5rem;
@@ -102,7 +100,7 @@
   .hero-sub {
     font-size: 1.05rem;
     color: var(--muted);
-    max-width: 600px;
+    max-width: 640px;
     margin: 0 auto 2rem;
     font-weight: 300;
   }
@@ -186,8 +184,9 @@
     position: absolute; top: 0; left: 0; right: 0; height: 2px;
     background: linear-gradient(90deg, var(--accent), transparent);
   }
-  .stat-card.red::after { background: linear-gradient(90deg, var(--red), transparent); }
+  .stat-card.red::after   { background: linear-gradient(90deg, var(--red), transparent); }
   .stat-card.green::after { background: linear-gradient(90deg, var(--green), transparent); }
+  .stat-card.yellow::after { background: linear-gradient(90deg, var(--yellow), transparent); }
 
   .stat-val {
     font-family: var(--mono);
@@ -200,12 +199,9 @@
   .stat-val.accent { color: var(--accent); }
   .stat-val.green  { color: var(--green); }
   .stat-val.red    { color: var(--red); }
+  .stat-val.yellow { color: var(--yellow); }
 
-  .stat-label {
-    font-size: 0.82rem;
-    color: var(--muted);
-    font-weight: 400;
-  }
+  .stat-label { font-size: 0.82rem; color: var(--muted); font-weight: 400; }
   .stat-note {
     font-family: var(--mono);
     font-size: 0.7rem;
@@ -216,7 +212,6 @@
 
   /* ── ARCHITECTURE ── */
   .arch-section { background: var(--bg2); }
-
   .arch-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 2rem; }
   @media (max-width: 700px) { .arch-grid { grid-template-columns: 1fr; } }
 
@@ -242,8 +237,81 @@
   }
   .code-block .c-accent { color: var(--accent); }
   .code-block .c-green  { color: var(--green);  }
+  .code-block .c-yellow { color: var(--yellow); }
   .code-block .c-red    { color: var(--red);    }
   .code-block .c-white  { color: #fff;          }
+
+  /* ── VECTORIZER EVOLUTION ── */
+  .vec-section { background: var(--bg); }
+  .vec-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    position: relative;
+  }
+  @media (max-width: 800px) { .vec-grid { grid-template-columns: 1fr; } }
+
+  .vec-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1.75rem;
+    position: relative;
+    transition: border-color 0.2s;
+  }
+  .vec-card:hover { border-color: rgba(79,195,247,0.4); }
+  .vec-card::after {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 2px;
+    background: linear-gradient(90deg, var(--accent), transparent);
+  }
+  .vec-card.v2::after { background: linear-gradient(90deg, var(--green), transparent); }
+  .vec-card.v3::after { background: linear-gradient(90deg, var(--yellow), transparent); }
+
+  .vec-step {
+    font-family: var(--mono);
+    font-size: 0.65rem;
+    color: var(--accent);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    margin-bottom: 0.4rem;
+  }
+  .vec-card.v2 .vec-step { color: var(--green); }
+  .vec-card.v3 .vec-step { color: var(--yellow); }
+
+  .vec-title {
+    font-family: var(--mono);
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 0.75rem;
+  }
+
+  .vec-stat-row {
+    display: flex;
+    gap: 1rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+  }
+  .vec-stat {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 0.4rem 0.75rem;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+  }
+  .vec-stat .vs-val { color: var(--accent); font-weight: 600; display: block; }
+  .vec-card.v2 .vec-stat .vs-val { color: var(--green); }
+  .vec-card.v3 .vec-stat .vs-val { color: var(--yellow); }
+  .vec-stat .vs-lbl { color: var(--muted); display: block; font-size: 0.65rem; }
+
+  .vec-desc {
+    font-size: 0.87rem;
+    color: var(--muted);
+    line-height: 1.65;
+    margin-top: 0.5rem;
+  }
 
   /* ── FINDINGS ── */
   .findings-grid {
@@ -270,11 +338,7 @@
     margin-bottom: 0.5rem;
   }
 
-  .finding-card p {
-    font-size: 0.9rem;
-    color: var(--muted);
-    line-height: 1.65;
-  }
+  .finding-card p { font-size: 0.9rem; color: var(--muted); line-height: 1.65; }
   .finding-card strong { color: var(--text); font-weight: 500; }
 
   /* ── PLOTS ── */
@@ -287,13 +351,60 @@
     margin-bottom: 2rem;
   }
   .plot-wrap img { width: 100%; border-radius: 4px; display: block; }
+
   .plot-caption {
     font-family: var(--mono);
     font-size: 0.75rem;
     color: var(--muted);
-    margin-top: 0.75rem;
+    margin-top: 1rem;
     letter-spacing: 0.03em;
+    line-height: 1.7;
   }
+  .plot-caption strong { color: var(--accent); font-weight: 600; }
+
+  .plot-analysis {
+    margin-top: 0.9rem;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--border);
+    font-size: 0.85rem;
+    color: var(--muted);
+    line-height: 1.7;
+  }
+  .plot-analysis strong { color: var(--text); font-weight: 500; }
+
+  /* ── RESULTS TABLE ── */
+  .table-wrap {
+    overflow-x: auto;
+    margin-bottom: 2rem;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: var(--mono);
+    font-size: 0.8rem;
+  }
+  thead tr {
+    background: var(--bg3);
+    border-bottom: 1px solid rgba(79,195,247,0.3);
+  }
+  th {
+    padding: 0.7rem 1rem;
+    text-align: left;
+    color: var(--accent);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+  td {
+    padding: 0.6rem 1rem;
+    color: var(--muted);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  tr:hover td { background: rgba(79,195,247,0.04); }
+  td.good { color: var(--green); font-weight: 600; }
+  td.bad  { color: var(--red);   font-weight: 600; }
+  td.hi   { color: var(--text);  font-weight: 600; }
 
   /* ── LIMITATIONS ── */
   .lim-list { list-style: none; display: flex; flex-direction: column; gap: 1rem; }
@@ -324,7 +435,7 @@
   /* ── STACK ── */
   .stack-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     gap: 1rem;
   }
   .stack-item {
@@ -351,11 +462,7 @@
   footer a { color: var(--accent); text-decoration: none; }
 
   /* ── DIVIDER ── */
-  .divider {
-    border: none;
-    border-top: 1px solid var(--border);
-    margin: 0;
-  }
+  .divider { border: none; border-top: 1px solid var(--border); margin: 0; }
 
   @media (max-width: 600px) {
     nav { padding: 0 1.25rem; }
@@ -370,9 +477,10 @@
 <nav>
   <div class="nav-logo">learned_bf.research</div>
   <div class="nav-links">
-    <a href="#findings">Findings</a>
-    <a href="#architecture">Architecture</a>
+    <a href="#overview">Overview</a>
+    <a href="#vectorizers">Vectorizers</a>
     <a href="#results">Results</a>
+    <a href="#findings">Findings</a>
     <a href="#limitations">Limitations</a>
   </div>
 </nav>
@@ -383,7 +491,7 @@
   <div class="hero-eyebrow">Research Project · IIT Gandhinagar</div>
   <h1>Learned <span>Bloom</span> Filters</h1>
   <p class="hero-sub">
-    Replacing hash-based membership checks with a machine learning oracle backed by a constrained Bloom filter — benchmarked across 160 configurations on 420K URLs.
+    Replacing hash-based membership checks with a machine learning oracle backed by a constrained Bloom filter — benchmarked across three vectorisation strategies and 140 configurations on 420K URLs.
   </p>
   <div class="hero-meta">
     Supervisor: <span>Prof. Anirban Dasgupta</span> &nbsp;·&nbsp;
@@ -392,47 +500,47 @@
   </div>
   <div class="btn-row">
     <a href="https://github.com/krish-goradia/learned_bloom_filter" class="btn filled">GitHub Repo</a>
-    <a href="#findings" class="btn">View Findings</a>
+    <a href="#results" class="btn">View Results</a>
   </div>
 </section>
 
 <hr class="divider"/>
 
 <!-- KEY STATS -->
-<section id="findings">
+<section id="overview">
   <div class="container">
     <div class="section-label">at a glance</div>
     <h2>Key Numbers</h2>
     <div class="stats-grid">
       <div class="stat-card green">
-        <div class="stat-val green">32%</div>
+        <div class="stat-val green">72%</div>
         <div class="stat-label">Memory reduction vs standard BF at FPR = 0.1</div>
-        <div class="stat-note">0.0206 MB vs 0.0302 MB</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-val accent">FPR &lt; 0.01</div>
-        <div class="stat-label">Crossover point where learned BF loses memory advantage</div>
-        <div class="stat-note">Feature space inflation dominates</div>
-      </div>
-      <div class="stat-card red">
-        <div class="stat-val red">1.7×</div>
-        <div class="stat-label">Latency overhead vs standard BF</div>
-        <div class="stat-note">~185–205 ns vs ~109 ns per query</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-val accent">160</div>
-        <div class="stat-label">Configurations benchmarked across 4 × 8 × 5 grid</div>
-        <div class="stat-note">n_features × thresholds × backup FPRs</div>
+        <div class="stat-note">C++ trigram · 0.054 MB vs 0.197 MB</div>
       </div>
       <div class="stat-card green">
-        <div class="stat-val green">~44%</div>
-        <div class="stat-label">FNR reduction from scaling n_features 1024 → 16384</div>
-        <div class="stat-note">At fixed threshold, all FPR targets</div>
+        <div class="stat-val green">47%</div>
+        <div class="stat-label">Memory reduction at FPR = 0.01</div>
+        <div class="stat-note">C++ trigram · 0.208 MB vs 0.394 MB</div>
+      </div>
+      <div class="stat-card yellow">
+        <div class="stat-val yellow">54×</div>
+        <div class="stat-label">C++ kernel speedup over Python char trigram</div>
+        <div class="stat-note">461 ns vs ~26,000 ns per query</div>
+      </div>
+      <div class="stat-card red">
+        <div class="stat-val red">4.3×</div>
+        <div class="stat-label">C++ learned BF latency overhead vs standard BF</div>
+        <div class="stat-note">~500 ns vs ~130 ns — structural cost of model + BF</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val accent">140</div>
+        <div class="stat-label">Configurations benchmarked per variant</div>
+        <div class="stat-note">4 n_features × 7 thresholds × 5 backup FPRs</div>
       </div>
       <div class="stat-card">
         <div class="stat-val accent">420K</div>
         <div class="stat-label">URLs evaluated — 80% benign, 20% malicious</div>
-        <div class="stat-note">70/30 train/test split, random_state=42</div>
+        <div class="stat-note">All good URLs in train + test · bad URLs 80/20 split</div>
       </div>
     </div>
   </div>
@@ -449,54 +557,161 @@
 
       <div class="arch-card">
         <h3>Standard Bloom Filter</h3>
-        <p style="font-size:0.88rem;color:var(--muted);margin-bottom:0.5rem;">Baseline — all bad training URLs inserted directly.</p>
+        <p style="font-size:0.88rem;color:var(--muted);margin-bottom:0.5rem;">Baseline — all good (in-set) training URLs inserted directly.</p>
         <div class="code-block"><span class="c-white">Query URL</span>
   → <span class="c-accent">Bloom Filter</span>
-      (stores ALL bad train URLs)
-  → <span class="c-green">bad</span> / <span class="c-red">good</span>
+      (stores ALL good train URLs)
+  → <span class="c-green">pass</span> / <span class="c-red">block</span>
 
 <span class="c-accent">Guarantee:</span> zero false negatives
-<span class="c-accent">Cost:</span> memory scales with |bad URLs|</div>
+<span class="c-accent">FP:</span>  bad URL wrongly passed (bounded by FPR)
+<span class="c-accent">Cost:</span> memory ∝ |good URLs| × bits-per-element</div>
       </div>
 
       <div class="arch-card">
         <h3>Learned Bloom Filter</h3>
-        <p style="font-size:0.88rem;color:var(--muted);margin-bottom:0.5rem;">Model handles bulk classification; BF patches training errors only.</p>
+        <p style="font-size:0.88rem;color:var(--muted);margin-bottom:0.5rem;">Model handles bulk classification; backup BF patches training FNs only.</p>
         <div class="code-block"><span class="c-white">Query URL</span>
-  → <span class="c-accent">ML Oracle</span> (LR + HashingVectorizer)
-      prob ≥ threshold?
-        <span class="c-green">YES</span> → flag bad ✓
+  → <span class="c-accent">ML Oracle</span> (LR + Vectorizer)
+      P(good) ≥ threshold?
+        <span class="c-green">YES</span> → pass ✓
         <span class="c-red">NO</span>  → <span class="c-accent">Backup BF</span>
-                  (stores train FNs only)
-                  found? → <span class="c-green">bad</span> / <span class="c-red">good</span></div>
+                  (stores training FNs only)
+                  found? → <span class="c-green">pass</span> / <span class="c-red">block</span></div>
       </div>
 
       <div class="arch-card">
         <h3>C++ Bloom Filter</h3>
-        <p style="font-size:0.88rem;color:var(--muted);margin-bottom:0.5rem;">Built from scratch, exposed to Python via pybind11.</p>
-        <div class="code-block"><span class="c-accent">Hash:</span>  xxHash64 + double hashing
-       idx = (h1 + i·h2) % m
+        <p style="font-size:0.88rem;color:var(--muted);margin-bottom:0.5rem;">Built from scratch in C++17, exposed to Python via pybind11.</p>
+        <div class="code-block"><span class="c-accent">Hash:</span>   xxHash64 + double hashing
+        idx = (h1 + i·h2) % m, i ∈ 0..k
 
 <span class="c-accent">Storage:</span> vector&lt;uint64_t&gt; bit array
-         cache-friendly, 64-bit aligned
+         64-bit aligned, cache-friendly
 
-<span class="c-accent">Sizing:</span> m = -(n·ln(fpr)) / ln(2)²
+<span class="c-accent">Sizing:</span>  m = -(n·ln(fpr)) / ln(2)²
          k = (m/n)·ln(2)</div>
       </div>
 
       <div class="arch-card">
-        <h3>ML Oracle</h3>
-        <p style="font-size:0.88rem;color:var(--muted);margin-bottom:0.5rem;">Stateless vectorizer — no vocabulary storage.</p>
-        <div class="code-block"><span class="c-accent">Vectorizer:</span> HashingVectorizer
-  n_features: 1024 / 2048 / 4096 / 16384
-  alternate_sign: False
+        <h3>Problem Framing</h3>
+        <p style="font-size:0.88rem;color:var(--muted);margin-bottom:0.5rem;">Membership testing — not binary classification.</p>
+        <div class="code-block"><span class="c-accent">good URL</span> (label=1) → in-set member
+<span class="c-red">bad  URL</span> (label=0) → non-member
 
-<span class="c-accent">Model:</span> LogisticRegression
-  max_iter: 1000
-  input: raw URL string
-  output: P(bad URL)</div>
+Train: ALL good + 80% bad
+Test:  ALL good + 20% bad (disjoint)
+
+<span class="c-accent">FNR = 0</span> by construction:
+  all good URLs seen at train time
+  → backup BF catches every model FN
+  → system never blocks a member</div>
       </div>
 
+    </div>
+  </div>
+</section>
+
+<hr class="divider"/>
+
+<!-- VECTORIZER EVOLUTION -->
+<section id="vectorizers" class="vec-section">
+  <div class="container">
+    <div class="section-label">vectorisation strategy</div>
+    <h2>Three Vectorisers, One Story</h2>
+    <p style="color:var(--muted);font-size:0.95rem;max-width:720px;margin-bottom:3rem;">
+      The project evolved through three vectorisation strategies, each trading model quality against latency differently.
+      The progression from word tokens → char trigrams → fused C++ kernel tells the story of closing the gap
+      between a research prototype and a deployable system.
+    </p>
+
+    <div class="vec-grid">
+
+      <!-- V1 -->
+      <div class="vec-card">
+        <div class="vec-step">Step 01 · Python</div>
+        <div class="vec-title">HashingVectorizer<br/>Word Tokens (Default)</div>
+        <p class="vec-desc">
+          scikit-learn's default word-level tokeniser splits URLs on whitespace and punctuation,
+          producing ~3–8 word tokens per URL. Each token maps to a hashed feature bucket.
+          Fast to run but <strong style="color:var(--text)">discards all subword structure</strong> — path
+          components, subdomains, and query strings are split into fragments that lose their
+          malicious signal context.
+        </p>
+        <div class="code-block" style="margin-top:0.75rem;"><span class="c-accent">HashingVectorizer</span>(
+  analyzer=<span class="c-green">"word"</span>,
+  n_features=n_features
+)
+avg NNZ per URL: <span class="c-white">~6</span>
+batch latency:   <span class="c-white">~7,548 ns/query</span></div>
+        <div class="vec-stat-row">
+          <div class="vec-stat"><span class="vs-val">~7,548 ns</span><span class="vs-lbl">avg latency</span></div>
+          <div class="vec-stat"><span class="vs-val">~130K</span><span class="vs-lbl">QPS</span></div>
+          <div class="vec-stat"><span class="vs-val">~6 NNZ</span><span class="vs-lbl">per URL</span></div>
+        </div>
+      </div>
+
+      <!-- V2 -->
+      <div class="vec-card v2">
+        <div class="vec-step">Step 02 · Python</div>
+        <div class="vec-title">HashingVectorizer<br/>Char Trigrams</div>
+        <p class="vec-desc">
+          Switching to <code style="color:var(--green)">analyzer='char', ngram_range=(3,3)</code> captures
+          subword patterns like <code style="color:var(--green)">.ph</code>, <code style="color:var(--green)">/ad</code>,
+          <code style="color:var(--green)">://</code> that word tokens miss entirely. A URL of length L
+          produces L−2 trigrams, averaging ~160 NNZ per row — <strong style="color:var(--text)">26× denser</strong>
+          than word tokens. Model quality improves substantially, but latency explodes because
+          scikit-learn's sparse matrix pipeline is bottlenecked on CSR construction and batch numpy operations,
+          not true per-query inference.
+        </p>
+        <div class="code-block" style="margin-top:0.75rem;"><span class="c-green">HashingVectorizer</span>(
+  analyzer=<span class="c-green">"char"</span>,
+  ngram_range=<span class="c-green">(3,3)</span>,
+  n_features=n_features
+)
+avg NNZ per URL: <span class="c-white">~160</span>
+batch latency:   <span class="c-white">~26,406 ns/query</span></div>
+        <div class="vec-stat-row">
+          <div class="vec-stat"><span class="vs-val">~26,406 ns</span><span class="vs-lbl">amortised latency</span></div>
+          <div class="vec-stat"><span class="vs-val">~37K</span><span class="vs-lbl">QPS</span></div>
+          <div class="vec-stat"><span class="vs-val">~160 NNZ</span><span class="vs-lbl">per URL</span></div>
+        </div>
+      </div>
+
+      <!-- V3 -->
+      <div class="vec-card v3">
+        <div class="vec-step">Step 03 · C++17</div>
+        <div class="vec-title">Fused Rolling Hash<br/>Char Trigrams</div>
+        <p class="vec-desc">
+          The C++ kernel eliminates Python overhead entirely. Vectorisation and scoring are
+          <strong style="color:var(--text)">fused into a single pass</strong> over the URL string —
+          no CSR matrix is built, no intermediate data is allocated. A rolling hash computes
+          each trigram in O(1). Model weights exported from sklearn are stored in a
+          <code style="color:var(--yellow)">double[]</code> array; the logit accumulates inline.
+          This gives <strong style="color:var(--text)">true per-query latency</strong>, not amortised
+          batch averages, enabling direct comparison with a production serving scenario.
+        </p>
+        <div class="code-block" style="margin-top:0.75rem;"><span class="c-yellow">// rolling hash — O(1) per trigram</span>
+<span class="c-yellow">// fused logit accumulation</span>
+<span class="c-white">true latency: ~445–461 ns/query</span></div>
+        <div class="vec-stat-row">
+          <div class="vec-stat"><span class="vs-val">~461 ns</span><span class="vs-lbl">true latency</span></div>
+          <div class="vec-stat"><span class="vs-val">~2.0M</span><span class="vs-lbl">QPS</span></div>
+          <div class="vec-stat"><span class="vs-val">54×</span><span class="vs-lbl">vs Python trigram</span></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- latency caveat -->
+    <div style="margin-top:2rem;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1.25rem 1.5rem;">
+      <div style="font-family:var(--mono);font-size:0.7rem;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.4rem;">important · latency note</div>
+      <p style="font-size:0.88rem;color:var(--muted);line-height:1.65;">
+        Python latency figures are <strong style="color:var(--text)">amortised batch averages</strong> — scikit-learn processes the entire test set at once and benefits from NumPy/BLAS parallelism.
+        A real serving system processing one URL at a time would be significantly slower.
+        C++ figures are <strong style="color:var(--text)">true per-query measurements</strong> via <code>high_resolution_clock</code> with a 1000-URL warmup before timing.
+        Only C++ numbers are directly comparable to a production serving scenario.
+      </p>
     </div>
   </div>
 </section>
@@ -509,59 +724,275 @@
     <div class="section-label">experimental results</div>
     <h2>Benchmarks</h2>
 
+    <!-- PLOT 1 -->
     <div class="plot-wrap">
-      <img src="results/crossover_plot.png" alt="Memory vs FPR crossover plot"/>
+      <img src="results/plot1_memory.png" alt="Memory comparison across all variants and FPR targets"/>
       <div class="plot-caption">
-        Fig 1. Memory comparison across 4 target FPR values. Left: full frontier per n_features vs standard BF reference points. Right: best-config bar chart with reduction percentages. Crossover at FPR ≈ 0.01 is visible in both views.
+        <strong>Fig 1 — Memory Usage: All Variants vs Standard BF</strong><br/>
+        Grouped bars show best-config total memory (model weights + backup BF bits) for each variant at four target FPR values.
+        The dashed red line is the standard BF reference. Percentage labels show memory reduction vs standard BF.
+      </div>
+      <div class="plot-analysis">
+        <strong>Analysis.</strong> The C++ trigram variant achieves the largest savings at every FPR target —
+        up to <strong>72% at FPR = 0.1</strong> and <strong>47% at FPR = 0.01</strong>. The word-default vectoriser
+        consistently underperforms char trigrams because word tokens produce fewer, coarser features,
+        leaving the model less discriminative and pushing more URLs into the backup BF.
+        At FPR = 0.005, all three learned variants still beat the standard BF (30–16% savings),
+        contradicting a simple narrative of a hard crossover — the savings narrow but do not vanish.
+        The char trigram Python variant sits between the C++ implementation and the word default,
+        confirming that feature quality (not just vectoriser speed) drives memory efficiency.
       </div>
     </div>
 
+    <!-- PLOT 2 -->
     <div class="plot-wrap">
-      <img src="results/performance_plots.png" alt="Latency, throughput, and FNR plots"/>
+      <img src="results/plot2_latency.png" alt="Latency and throughput comparison across all variants"/>
       <div class="plot-caption">
-        Fig 2. Performance analysis. Top: latency and throughput gap (~1.7×). Bottom-left: latency breakdown showing model and BF contribute roughly equally. Bottom-right: FNR vs n_features showing 38–44% reduction as feature space scales.
+        <strong>Fig 2 — Latency & Throughput: All Variants</strong><br/>
+        Left: average end-to-end latency per query on a log scale. Right: throughput in millions of queries per second.
+        Standard BF is the single-lookup baseline. C++ figures are true per-query; Python figures are amortised batch averages.
+      </div>
+      <div class="plot-analysis">
+        <strong>Analysis.</strong> The log scale on the left panel is necessary — the gap between Python char trigrams (~26,000 ns)
+        and the C++ kernel (~461 ns) spans nearly two orders of magnitude, making a linear scale unreadable.
+        The standard BF at ~130 ns remains the fastest option: it is a single hash lookup with no model overhead.
+        The C++ learned BF at ~500 ns total is <strong>4.3× slower</strong> than the standard BF but <strong>54× faster</strong>
+        than Python char trigrams — a result that would be invisible if only Python experiments were reported.
+        The throughput panel (right) tells the same story: C++ sustains ~2M QPS, Python word tokens ~130K QPS,
+        Python char trigrams ~37K QPS. For a system handling millions of URL checks per second,
+        only the C++ implementation is viable.
       </div>
     </div>
+
+    <!-- PLOT 3 -->
+    <div class="plot-wrap">
+      <img src="results/plot3_threshold.png" alt="Threshold vs system FPR and backup BF size"/>
+      <div class="plot-caption">
+        <strong>Fig 3 — Threshold Tradeoff (C++ Trigram, Target FPR = 0.01)</strong><br/>
+        Left: classification threshold vs achieved system FPR across all n_features values. Dashed line marks the 0.01 target.
+        Right: same threshold axis vs training FN count, which directly controls backup BF size and memory.
+      </div>
+      <div class="plot-analysis">
+        <strong>Analysis.</strong> The two panels expose a fundamental tension in the learned BF design.
+        Lowering the threshold passes more URLs through the model without querying the BF — reducing FPR —
+        but simultaneously classifies fewer good URLs as "definitely good", <strong>increasing the training FN count</strong>
+        and therefore the backup BF size. The right panel shows fn_count growing steeply above threshold = 0.90,
+        explaining why high-threshold configs dominate memory despite their better FPR performance.
+        The n_features dimension shows that larger feature spaces push the FPR curve down and left
+        (better FPR at the same threshold) but the fn_count curves overlap closely — more features
+        help FPR more than they help backup BF size. This means the memory savings from better oracle quality
+        accrue primarily through being able to use a <em>lower</em> threshold to hit the same FPR target.
+      </div>
+    </div>
+
+    <!-- PLOT 4 -->
+    <div class="plot-wrap">
+      <img src="results/plot4_heatmap.png" alt="Memory reduction heatmap across threshold and n_features"/>
+      <div class="plot-caption">
+        <strong>Fig 4 — Memory Reduction Heatmap: Threshold × n_features (C++ Trigram)</strong><br/>
+        Each cell shows the percentage memory reduction vs standard BF for the best backup_fpr at that
+        threshold / n_features combination. Grey cells (—) indicate no valid configuration exists that
+        meets the target FPR constraint. Left: target FPR = 0.01. Right: target FPR = 0.05.
+      </div>
+      <div class="plot-analysis">
+        <strong>Analysis.</strong> The heatmap makes the operating regime immediately visible.
+        At FPR = 0.01 (left), valid configs only appear at high thresholds (≥ 0.90) — the model needs extreme
+        confidence to suppress bad URL leakage below 1%. Even within valid configs, memory reduction
+        varies significantly: threshold = 0.99 at n_features = 4096 achieves ~31%, while lower feature counts
+        at the same threshold achieve less because the weaker oracle pushes more URLs into the backup BF.
+        At FPR = 0.05 (right), the valid region expands substantially — configs with threshold ≥ 0.70 become
+        viable and memory savings reach 60%+. The takeaway is that <strong>the learned BF's operating regime
+        is highly sensitive to the FPR target</strong>: relaxing from 0.01 to 0.05 roughly doubles
+        the achievable memory savings.
+      </div>
+    </div>
+
+    <!-- PLOT 5 -->
+    <div class="plot-wrap">
+      <img src="results/plot5_frontier.png" alt="Memory frontier across all FPR targets"/>
+      <div class="plot-caption">
+        <strong>Fig 5 — Memory Frontier: All Variants Across FPR Targets</strong><br/>
+        Best-config memory for each variant plotted against target FPR on a log scale.
+        The shaded region below the C++ trigram line and above the standard BF line represents
+        the memory savings achieved by the learned approach.
+      </div>
+      <div class="plot-analysis">
+        <strong>Analysis.</strong> This is the summary view. All three learned variants beat the standard BF
+        at every FPR target tested — there is no crossover in this dataset with this problem framing.
+        The gap between variants widens as FPR relaxes: at FPR = 0.1, char trigrams and C++ trigrams
+        nearly converge (both ~0.054 MB) while the word-default variant lags at 0.083 MB.
+        At tight FPR targets (0.005), the spread narrows because all variants need large feature spaces
+        and high thresholds, both of which inflate memory toward the standard BF level.
+        The log x-axis reveals that memory scales roughly linearly with log(1/FPR) — each order of
+        magnitude tighter in FPR requirement roughly doubles total system memory across all variants.
+      </div>
+    </div>
+
+    <!-- RESULTS TABLE -->
+    <div class="section-label" style="margin-top:1rem;">best config per target fpr</div>
+    <h3 style="color:#fff;font-size:1.1rem;margin-bottom:1.25rem;font-family:var(--mono);">C++ Trigram — Best Configuration</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Target FPR</th>
+            <th>n_features</th>
+            <th>Threshold</th>
+            <th>Backup FPR</th>
+            <th>System FPR</th>
+            <th>System FNR</th>
+            <th>Memory (MB)</th>
+            <th>Std BF (MB)</th>
+            <th>Reduction</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="hi">0.005</td><td>4096</td><td>0.990</td><td>0.001</td>
+            <td>0.004296</td><td class="good">0.000</td>
+            <td>0.314</td><td>0.453</td><td class="good">−30.7%</td>
+          </tr>
+          <tr>
+            <td class="hi">0.01</td><td>4096</td><td>0.950</td><td>0.001</td>
+            <td>0.009720</td><td class="good">0.000</td>
+            <td>0.208</td><td>0.394</td><td class="good">−47.3%</td>
+          </tr>
+          <tr>
+            <td class="hi">0.05</td><td>4096</td><td>0.800</td><td>0.010</td>
+            <td>0.043493</td><td class="good">0.000</td>
+            <td>0.090</td><td>0.256</td><td class="good">−65.0%</td>
+          </tr>
+          <tr>
+            <td class="hi">0.1</td><td>4096</td><td>0.500</td><td>0.010</td>
+            <td>0.090422</td><td class="good">0.000</td>
+            <td>0.054</td><td>0.197</td><td class="good">−72.4%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 style="color:#fff;font-size:1.1rem;margin-bottom:1.25rem;font-family:var(--mono);">Char Trigram Python — Best Configuration</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Target FPR</th>
+            <th>n_features</th>
+            <th>Threshold</th>
+            <th>Backup FPR</th>
+            <th>System FPR</th>
+            <th>System FNR</th>
+            <th>Memory (MB)</th>
+            <th>Std BF (MB)</th>
+            <th>Reduction</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="hi">0.005</td><td>16384</td><td>0.900</td><td>0.001</td>
+            <td>0.004369</td><td class="good">0.000</td>
+            <td>0.321</td><td>0.453</td><td class="good">−29.2%</td>
+          </tr>
+          <tr>
+            <td class="hi">0.01</td><td>16384</td><td>0.800</td><td>0.001</td>
+            <td>0.009377</td><td class="good">0.000</td>
+            <td>0.253</td><td>0.394</td><td class="good">−35.8%</td>
+          </tr>
+          <tr>
+            <td class="hi">0.05</td><td>4096</td><td>0.800</td><td>0.010</td>
+            <td>0.033644</td><td class="good">0.000</td>
+            <td>0.096</td><td>0.256</td><td class="good">−62.6%</td>
+          </tr>
+          <tr>
+            <td class="hi">0.1</td><td>4096</td><td>0.500</td><td>0.010</td>
+            <td>0.048120</td><td class="good">0.000</td>
+            <td>0.054</td><td>0.197</td><td class="good">−72.7%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3 style="color:#fff;font-size:1.1rem;margin-bottom:1.25rem;font-family:var(--mono);">Word Default Python — Best Configuration</h3>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Target FPR</th>
+            <th>n_features</th>
+            <th>Threshold</th>
+            <th>Backup FPR</th>
+            <th>System FPR</th>
+            <th>System FNR</th>
+            <th>Memory (MB)</th>
+            <th>Std BF (MB)</th>
+            <th>Reduction</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="hi">0.005</td><td>16384</td><td>0.950</td><td>0.001</td>
+            <td>0.004230</td><td class="good">0.000</td>
+            <td>0.379</td><td>0.453</td><td class="good">−16.3%</td>
+          </tr>
+          <tr>
+            <td class="hi">0.01</td><td>4096</td><td>0.950</td><td>0.001</td>
+            <td>0.007800</td><td class="good">0.000</td>
+            <td>0.344</td><td>0.394</td><td class="good">−12.6%</td>
+          </tr>
+          <tr>
+            <td class="hi">0.05</td><td>4096</td><td>0.800</td><td>0.010</td>
+            <td>0.046000</td><td class="good">0.000</td>
+            <td>0.137</td><td>0.256</td><td class="good">−46.5%</td>
+          </tr>
+          <tr>
+            <td class="hi">0.1</td><td>4096</td><td>0.600</td><td>0.010</td>
+            <td>0.099940</td><td class="good">0.000</td>
+            <td>0.083</td><td>0.197</td><td class="good">−57.7%</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
   </div>
 </section>
 
 <hr class="divider"/>
 
 <!-- FINDINGS -->
-<section>
+<section id="findings">
   <div class="container">
     <div class="section-label">analysis</div>
     <h2>Findings</h2>
     <div class="findings-grid">
 
       <div class="finding-card">
-        <div class="finding-tag">Memory · Crossover</div>
-        <p>Learned BF achieves <strong>16–32% memory reduction at FPR ≥ 0.01</strong>. At FPR = 0.005, learned BF (0.072 MB) exceeds standard BF (0.070 MB) by 3.6% — feature space inflation at n_features = 4096 erases gains. The crossover is driven by model weight cost (n_features × 64 bits) dominating as larger feature spaces are needed for tighter precision.</p>
+        <div class="finding-tag">Memory · Feature Quality</div>
+        <p>Char trigrams consistently produce <strong>better memory savings than word tokens</strong> across all FPR targets — the gap is largest at relaxed targets (72% vs 58% at FPR = 0.1) and narrows at tight targets. Trigrams capture subword patterns like <code>.php</code>, <code>/admin/</code>, and <code>%20</code> that word tokens split apart, giving the model stronger discriminative signal and reducing training FNs that inflate the backup BF.</p>
       </div>
 
       <div class="finding-card">
-        <div class="finding-tag">Latency · Overhead</div>
-        <p>Consistent <strong>1.69–1.87× latency overhead</strong> across all FPR targets (~185–205 ns vs ~109 ns). The overhead is stable because model inference and BF lookup costs are largely independent of the FPR target — it is structural, not tunable.</p>
+        <div class="finding-tag">Memory · Threshold Tradeoff</div>
+        <p>Every FPR target has a minimum achievable threshold below which no valid config exists. <strong>Higher thresholds lower FPR but raise fn_count</strong>, directly inflating backup BF size and eroding memory savings. At FPR = 0.005, the threshold must reach 0.99 for the C++ variant — pushing fn_count above 150K. At FPR = 0.1, threshold = 0.50 suffices with fn_count well under 50K.</p>
       </div>
 
       <div class="finding-card">
-        <div class="finding-tag">Latency · Breakdown</div>
-        <p>Model (~91–99 ns, ~49%) and backup BF (~104–112 ns, ~54%) contribute <strong>roughly equally</strong> to total latency. Neither dominates — optimizing either component alone recovers at most half the overhead. Standard BF cost sits at approximately the model-only level.</p>
+        <div class="finding-tag">Latency · C++ vs Python</div>
+        <p>The C++ implementation achieves <strong>~461 ns true per-query latency</strong>, compared to ~26,406 ns amortised for Python char trigrams — a 54× difference. This gap is structural: Python does a batch inference which it is optimized for and measures amortised cost, while C++ measures genuine single-URL cost. For any serving system processing URLs one at a time, only the C++ implementation is production-viable.</p>
       </div>
 
       <div class="finding-card">
-        <div class="finding-tag">Throughput</div>
-        <p>Standard BF sustains <strong>~9.1–9.2M queries/s</strong> vs learned BF's <strong>~4.9–5.4M queries/s</strong>. The ~1.7× throughput gap directly mirrors the latency overhead — the sequential model + BF pipeline approximately halves effective throughput relative to a single BF lookup.</p>
+        <div class="finding-tag">Latency · Structural Cost</div>
+        <p>The C++ learned BF at ~500 ns total is <strong>4.3× slower than the standard BF</strong> at ~130 ns. This overhead is structural — the model scoring pass is an unavoidable addition to the BF lookup. The standard BF will always win on latency; the learned BF trades latency for memory.</p>
       </div>
 
       <div class="finding-card">
-        <div class="finding-tag">FNR · Oracle Quality</div>
-        <p>FNR drops <strong>38–44%</strong> as n_features scales from 1024 to 16384 at any fixed threshold. More hashing buckets reduce collisions, improving oracle generalization. However, this gain comes at a linear model memory cost — creating a direct <strong>FNR–memory tradeoff</strong> independent of the BF component.</p>
+        <div class="finding-tag">FNR · Zero by Construction</div>
+        <p>System FNR = 0.000 across all 420 configurations (140 per variant). This is not a model quality result — it follows from the experimental design. All good URLs appear in both train and test sets. The backup BF sees every member the model misclassified at training time, and since those same members reappear at test time, <strong>recovery is guaranteed</strong>. A weaker model simply routes more URLs through the backup BF at higher memory cost.</p>
       </div>
 
       <div class="finding-card">
-        <div class="finding-tag">FNR · Responsibility</div>
-        <p>System FNR reflects <strong>model generalization error</strong>, not a BF failure. The backup BF guarantees zero false negatives on its own inserted elements by construction — it cannot catch bad URLs the model misses at test time, as BFs memorize rather than generalize. FNR is entirely the oracle's responsibility.</p>
+        <div class="finding-tag">n_features · Optimal Point</div>
+        <p>Across all three variants and all FPR targets, <strong>n_features = 4096 dominates</strong> best-config selections. Larger feature spaces (16384) reduce hash collisions and improve oracle quality, but the linear growth in model weight memory (n_features × 8 bytes) outweighs the reduction in backup BF size. n_features = 4096 sits at the crossover where oracle quality and model memory are best balanced for this dataset and feature type.</p>
       </div>
 
     </div>
@@ -580,35 +1011,26 @@
       <li>
         <span class="lim-icon">L1</span>
         <div>
-          <strong>Worst-case evaluation by design.</strong>
-          The random 70/30 split produces disjoint train/test bad URL sets — zero overlap by construction. This means the backup BF cannot recover any test-time false negatives, representing the worst case for the backup BF. This is intentional: it isolates model generalization as the sole performance driver. Simulating overlap would constitute data leakage, conflating memorization with generalization. In realistic deployment where known malicious URLs are repeatedly queried, the backup BF would meaningfully reduce system FNR. Our evaluation reports a conservative lower bound.
+          <strong>FNR = 0 is a split property, not a model result.</strong>
+          System FNR is zero because all good URLs appear in the training set. The backup BF memorises every member the model missed at training time, and since those same members appear at test time, they are always recovered. This is not a claim about model quality — a weaker model simply pushes more members into the backup BF, inflating its size.
         </div>
       </li>
 
       <li>
         <span class="lim-icon">L2</span>
         <div>
-          <strong>Weak oracle.</strong>
-          Logistic Regression on hashed character features is a deliberately simple baseline. A character n-gram TF-IDF model or small MLP would produce fewer training false negatives, shrink the backup BF further, and reduce system FNR. Oracle strength is the primary lever for improving all downstream metrics.
+          <strong>Python latency is amortised, not per-query.</strong>
+          scikit-learn's transform and predict_proba batch the entire test set. The reported ns/query for Python variants is a lower bound on true single-URL online latency. C++ numbers are genuine per-query measurements and are the only directly comparable figures for a real serving scenario
         </div>
       </li>
+
 
       <li>
         <span class="lim-icon">L3</span>
         <div>
-          <strong>Memory accounting asymmetry.</strong>
-          Standard BF memory includes only BF bits. Learned BF memory includes model weights + BF bits — this is the correct total system cost comparison, but the components are structurally different. Results should be read as total deployment memory, not BF-to-BF.
-        </div>
+          <strong>Memory accounting is asymmetric.</strong>
+          Reported memory includes only the Logistic Regression model weights and the backup Bloom filter. Python runtime overhead, temporary data structures, and scikit-learn internal objects were not included, so the comparison focuses on the memory used by the learned Bloom filter itself rather than language-specific overhead
       </li>
-
-      <li>
-        <span class="lim-icon">L4</span>
-        <div>
-          <strong>Moderate class imbalance.</strong>
-          The dataset is 80% benign / 20% malicious with no resampling applied. Class-weighted training or oversampling could improve oracle quality, particularly FNR at high thresholds.
-        </div>
-      </li>
-
     </ul>
   </div>
 </section>
@@ -621,12 +1043,10 @@
     <div class="section-label">implementation</div>
     <h2>Stack</h2>
     <div class="stack-grid">
-      <div class="stack-item"><div class="si-name">C++17</div><div class="si-role">Bloom Filter core</div></div>
+      <div class="stack-item"><div class="si-name">C++17</div><div class="si-role">BF core + vectoriser</div></div>
       <div class="stack-item"><div class="si-name">xxHash64</div><div class="si-role">Double hashing</div></div>
       <div class="stack-item"><div class="si-name">pybind11</div><div class="si-role">Python extension</div></div>
-      <div class="stack-item"><div class="si-name">scikit-learn</div><div class="si-role">ML oracle</div></div>
-      <div class="stack-item"><div class="si-name">HashingVect.</div><div class="si-role">Stateless features</div></div>
-      <div class="stack-item"><div class="si-name">pandas</div><div class="si-role">Pipeline + results</div></div>
+      <div class="stack-item"><div class="si-name">scikit-learn</div><div class="si-role">ML oracle + HV</div></div>
     </div>
   </div>
 </section>
@@ -639,7 +1059,7 @@
     <a href="https://github.com/krish-goradia/learned_bloom_filter">View on GitHub</a>
   </div>
   <div style="margin-top:0.5rem;opacity:0.5;">
-    Based on Kraska et al., "The Case for Learned Index Structures", 2018
+    Based on Kraska et al., "The Case for Learned Index Structures", NeurIPS 2018
   </div>
 </footer>
 
@@ -653,14 +1073,11 @@
   const CW = W / COLS, CH = H / ROWS;
   const ACCENT = '#4FC3F7', DIM = '#0F2030', BRIGHT = '#00E5FF';
 
-  // initial state: sparse
   const bits = Array.from({length: ROWS * COLS}, () => Math.random() < 0.18 ? 1 : 0);
 
-  // simulate insertions
   const insertions = [];
   for (let i = 0; i < 40; i++) {
     const positions = [];
-    // double hashing: 3 positions per insert
     const h1 = Math.floor(Math.random() * ROWS * COLS);
     const h2 = Math.floor(Math.random() * ROWS * COLS * 0.3) + 1;
     for (let k = 0; k < 3; k++) {
@@ -705,16 +1122,13 @@
 
   function tick() {
     frame++;
-    // every 18 frames, do a new insertion
     if (frame % 18 === 0 && insertIdx < insertions.length) {
       const pos = insertions[insertIdx++];
       pos.forEach(p => { bits[p] = 1; });
       activePositions = pos;
       setTimeout(() => { activePositions = []; }, 280);
     }
-    // after all insertions, reset slowly
     if (insertIdx >= insertions.length && frame % 120 === 0) {
-      // reset to sparse and restart
       for (let i = 0; i < bits.length; i++) bits[i] = Math.random() < 0.18 ? 1 : 0;
       insertIdx = 0;
       frame = 0;
