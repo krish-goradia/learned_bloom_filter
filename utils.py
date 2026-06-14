@@ -8,17 +8,17 @@ def compute_metrics(results, labels):
     totalBad = 0
 
     for r, y in zip(results, labels):
-        if y == 1:
-            totalBad += 1
-            if not r:
-                falseNeg += 1
-        else:
+        if y == 1:  # good URL (in-set / member)
             totalGood += 1
+            if not r:
+                falseNeg += 1  # good URL blocked → FN
+        else:       # bad URL (out-of-set / non-member)
+            totalBad += 1
             if r:
-                falsePos += 1
+                falsePos += 1  # bad URL passed → FP
 
-    fpr = falsePos / totalGood if totalGood else 0
-    fnr = falseNeg / totalBad if totalBad else 0
+    fpr = falsePos / totalBad if totalBad else 0
+    fnr = falseNeg / totalGood if totalGood else 0
 
     return fpr, fnr
 
