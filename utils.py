@@ -26,3 +26,4 @@ def compute_metrics(results, labels):
 def compute_memory(n_features, bf_bits):
     model_bits = n_features * 64
     return model_bits + bf_bits
+

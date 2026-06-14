@@ -6,21 +6,10 @@ import bloom
 from utils import compute_metrics, compute_memory
 
 def prepare_model(train_df, test_df, n_features):
-    """
-    Membership testing framing:
-      label 1 = good (in-set)
-      label 0 = bad  (out-of-set)
-
-    Train: all good + 70% bad
-    Test:  all good + 30% bad
-
-    Model predicts P(URL is good). Threshold applied to pass/block.
-    """
+   
     vectorizer = HashingVectorizer(
-        analyzer="char",
-        ngram_range=(3, 5),
+        analyzer="word",
         n_features=n_features,
-        alternate_sign=False,
     )
 
     X_train = vectorizer.fit_transform(train_df['url'])
