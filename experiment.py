@@ -8,7 +8,8 @@ from utils import compute_metrics, compute_memory
 def prepare_model(train_df, test_df, n_features):
    
     vectorizer = HashingVectorizer(
-        analyzer="word",
+        analyzer="char",
+        ngram_range=(3,3),
         n_features=n_features,
     )
 
@@ -24,6 +25,7 @@ def prepare_model(train_df, test_df, n_features):
     # probs = P(good | url)
     probs_train = model.predict_proba(X_train)[:, 1]
 # time vectorization separately
+    _ = vectorizer.transform(test_df['url'][:1000])
     vec_start_ns = time.perf_counter_ns()
     X_test = vectorizer.transform(test_df['url'])
     vec_total_latency_ns = time.perf_counter_ns() - vec_start_ns
