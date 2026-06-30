@@ -1,33 +1,64 @@
 import numpy as np
 import time
 from sklearn.linear_model import LogisticRegression
+from sklearn.feature_extraction.text import HashingVectorizer
+from sklearn.metrics import roc_auc_score
 from scipy.sparse import csr_matrix
 import bloom
 from utils import compute_metrics, compute_memory
 
 
-def prepare_model_cpp(train_df, test_df, n_features):
+# ---------------------------------------------------------------------------
+# Core idea: pass the WHOLE batch in one call, let C++ loop internally,
+# time the single call from Python, then divide by batch size to get the
+# mean per-query latency. This way we pay the Python<->C++ crossing cost
+# ONCE for the entire batch, not once per item, and the per-item average
+# we report is honest (crossing overhead amortized + real per-item work).
+# ---------------------------------------------------------------------------
+def time_batched_call(fn, n_items, n_trials=20, warmup=3):
     """
-    Membership testing framing:
-      label 1 = good (in-set)
-      label 0 = bad  (out-of-set)
+    fn: zero-arg callable that runs ONE full batch call
+    n_items: number of queries in that batch
+    n_trials: number of repeated batch calls, averaged (mean)
+    warmup: untimed calls first, to avoid cold-cache/first-call skew
 
-    Train: all good + 70% bad
-    Test:  all good + 30% bad
+    Returns: (mean_latency_ns_per_item, throughput_qps, result_of_last_call)
+    """
+    if n_items == 0:
+        return 0.0, 0.0, None
 
-    C++ vectorizer replaces HashingVectorizer.
-    Model predicts P(URL is good). Threshold applied to pass/block.
-    vec + score fused in C++ at test time — true latency, no Python overhead.
+    result = None
+    for _ in range(warmup):
+        result = fn()
+
+    total_times_s = []
+    for _ in range(n_trials):
+        t0 = time.perf_counter()
+        result = fn()
+        t1 = time.perf_counter()
+        total_times_s.append(t1 - t0)
+
+    mean_total_s = sum(total_times_s) / len(total_times_s)
+    avg_latency_ns = (mean_total_s / n_items) * 1e9
+    throughput_qps = n_items / mean_total_s if mean_total_s > 0 else 0.0
+
+    return avg_latency_ns, throughput_qps, result
+
+
+def prepare_model_cpp(train_df, test_df, n_features, n_trials=20):
+    """
+    C++ fused vectorizer + scorer.
+    vec.transform_and_score() is called ONCE with the full batch of test
+    URLs; C++ loops internally. We time that single call from Python and
+    divide by batch size for the mean per-query latency.
     """
     train_urls = train_df['url'].tolist()
     test_urls  = test_df['url'].tolist()
-
     y_train = train_df['label'].values
     y_test  = test_df['label'].values
 
     vec = bloom.Vectorizer(n_features, 3, 3)
 
-    # --- vectorize train in C++ → CSR → fit LR in Python ---
     csr = vec.transform(train_urls)
     X_train = csr_matrix(
         (csr.data, csr.indices, csr.indptr),
@@ -36,32 +67,26 @@ def prepare_model_cpp(train_df, test_df, n_features):
 
     model = LogisticRegression(max_iter=1000, class_weight="balanced")
     model.fit(X_train, y_train)
-
-    # probs = P(good | url)
     probs_train = model.predict_proba(X_train)[:, 1]
 
-    # --- export weights to C++ ---
     weights   = model.coef_[0].tolist()
     intercept = float(model.intercept_[0])
 
-    # --- vectorize + score test entirely in C++ (true latency) ---
-    scored = vec.transform_and_score(test_urls, weights, intercept)
+    test_count = len(test_urls)
+
+    def call_fn():
+        return vec.transform_and_score(test_urls, weights, intercept)
+
+    model_avg_latency_ns, model_throughput_qps, scored = time_batched_call(
+        call_fn, n_items=test_count, n_trials=n_trials
+    )
+    model_total_latency_ns = model_avg_latency_ns * test_count
 
     probs_test = np.array(scored.probs)
-    from sklearn.metrics import roc_auc_score
     auc = roc_auc_score(y_test, probs_test)
     print(f"AUC: {auc:.4f}")
-
-    test_count = len(test_urls)
-    if test_count > 0 and scored.avg_latency_ns > 0:
-        model_avg_latency_ns  = scored.avg_latency_ns
-        model_total_latency_ns = scored.avg_latency_ns * test_count
-        model_throughput_qps  = scored.throughput_qps
-    else:
-        model_avg_latency_ns   = 0.0
-        model_total_latency_ns = 0.0
-        model_throughput_qps   = 0.0
-    
+    print(f"[Python-timed] fused vec+score: {model_avg_latency_ns:.1f} ns/query "
+          f"(mean over {n_trials} trials, batch={test_count}), {model_throughput_qps:.0f} qps")
 
     return {
         "probs_train":             probs_train,
@@ -76,54 +101,91 @@ def prepare_model_cpp(train_df, test_df, n_features):
     }
 
 
-def run_config_cpp(precomp, n_features, threshold, backup_fpr):
+def prepare_model_sklearn(train_df, test_df, n_features, n_trials=20):
     """
-    Learned Bloom Filter pipeline (membership framing, C++ vectorizer):
-
-    1. Model passes URL if P(good) >= threshold.
-       (vec + score fused in C++ — model_total_latency_ns covers both)
-    2. BF backup stores good URLs the model missed (FNs on train set),
-       so they still get passed through at test time.
-    3. A URL is finally passed iff model passes it OR BF says it's a member.
-
-    FP  = bad URL passed (dangerous leakage)
-    FN  = good URL blocked (false alarm)
+    Baseline: sklearn HashingVectorizer + predict_proba, timed the same way
+    — one full batch call (vectorize + predict on all test URLs), timed
+    from Python, divided by batch size.
     """
-    probs_train            = precomp["probs_train"]
-    probs_test             = precomp["probs_test"]
-    y_train                = precomp["y_train"]
-    y_test                 = precomp["y_test"]
-    train_urls             = precomp["train_urls"]
-    test_urls              = precomp["test_urls"]
-    model_total_latency_ns = precomp["model_total_latency_ns"]
-    model_avg_latency_ns   = precomp["model_avg_latency_ns"]
-    model_throughput_qps   = precomp["model_throughput_qps"]
+    train_urls = train_df['url'].tolist()
+    test_urls  = test_df['url'].tolist()
+    y_train = train_df['label'].values
+    y_test  = test_df['label'].values
 
-    # --- build backup BF from training FNs (good URLs the model blocked) ---
+    hv = HashingVectorizer(n_features=n_features, analyzer='char', ngram_range=(3, 3))
+    X_train = hv.transform(train_urls)
+
+    model = LogisticRegression(max_iter=1000, class_weight="balanced")
+    model.fit(X_train, y_train)
+    probs_train = model.predict_proba(X_train)[:, 1]
+
+    test_count = len(test_urls)
+
+    def call_fn():
+        X_test = hv.transform(test_urls)
+        return model.predict_proba(X_test)[:, 1]
+
+    model_avg_latency_ns, model_throughput_qps, probs_test = time_batched_call(
+        call_fn, n_items=test_count, n_trials=n_trials
+    )
+    model_total_latency_ns = model_avg_latency_ns * test_count
+
+    auc = roc_auc_score(y_test, probs_test)
+    print(f"AUC: {auc:.4f}")
+    print(f"[Python-timed] sklearn vec+predict: {model_avg_latency_ns:.1f} ns/query "
+          f"(mean over {n_trials} trials, batch={test_count}), {model_throughput_qps:.0f} qps")
+
+    return {
+        "probs_train":             probs_train,
+        "probs_test":              probs_test,
+        "y_train":                 y_train,
+        "y_test":                  y_test,
+        "train_urls":              train_urls,
+        "test_urls":               test_urls,
+        "model_total_latency_ns":  float(model_total_latency_ns),
+        "model_avg_latency_ns":    model_avg_latency_ns,
+        "model_throughput_qps":    model_throughput_qps,
+    }
+
+
+def run_config_cpp(precomp, n_features, threshold, backup_fpr, n_trials=20):
+    """
+    Learned Bloom Filter pipeline. BF query_batch() is called ONCE with all
+    blocked URLs as a batch; C++ loops internally. Timed from Python the
+    same way as the model above.
+    """
+    probs_train             = precomp["probs_train"]
+    probs_test              = precomp["probs_test"]
+    y_train                 = precomp["y_train"]
+    y_test                  = precomp["y_test"]
+    train_urls              = precomp["train_urls"]
+    test_urls               = precomp["test_urls"]
+    model_total_latency_ns  = precomp["model_total_latency_ns"]
+    model_avg_latency_ns    = precomp["model_avg_latency_ns"]
+    model_throughput_qps    = precomp["model_throughput_qps"]
+
     preds_train = (probs_train >= threshold).astype(int)
-    fn_mask     = (y_train == 1) & (preds_train == 0)  # true good, predicted bad
+    fn_mask     = (y_train == 1) & (preds_train == 0)
     fn_urls     = [u for u, m in zip(train_urls, fn_mask) if m]
 
     learned_bf = bloom.BloomFilter(len(fn_urls), backup_fpr)
     learned_bf.insert_batch(fn_urls)
 
-    # --- test-time inference ---
-    model_preds = (probs_test >= threshold)             # True = model says "good"
+    model_preds = (probs_test >= threshold)
+    bf_inputs = [u for u, mp in zip(test_urls, model_preds) if not mp]
 
-    # Only query BF for URLs the model blocked (could be FNs)
-    bf_inputs  = [u for u, mp in zip(test_urls, model_preds) if not mp]
-    bf_outputs = learned_bf.query_batch(bf_inputs)
+    def bf_call_fn():
+        return learned_bf.query_batch(bf_inputs)
+
+    bf_avg_latency_ns, bf_throughput_qps, bf_outputs = time_batched_call(
+        bf_call_fn, n_items=len(bf_inputs), n_trials=n_trials
+    )
+    bf_total_latency_ns = bf_avg_latency_ns * len(bf_inputs)
 
     if bf_inputs:
-        bf_stats          = learned_bf.benchmark(bf_inputs, len(fn_urls))
-        bf_avg_latency_ns = bf_stats.avg_latency_ns
-        bf_throughput_qps = bf_stats.throughput_qps
-    else:
-        bf_avg_latency_ns = 0.0
-        bf_throughput_qps = 0.0
+        print(f"[Python-timed] BF query_batch: {bf_avg_latency_ns:.1f} ns/query "
+              f"(mean over {n_trials} trials, batch={len(bf_inputs)}), {bf_throughput_qps:.0f} qps")
 
-    bf_total_latency_ns     = bf_avg_latency_ns * len(bf_inputs)
-    # model_total_latency_ns already includes vec + score (fused in C++)
     total_system_latency_ns = model_total_latency_ns + bf_total_latency_ns
     if len(test_urls) > 0 and total_system_latency_ns > 0:
         total_system_avg_latency_ns = total_system_latency_ns / len(test_urls)
@@ -132,7 +194,6 @@ def run_config_cpp(precomp, n_features, threshold, backup_fpr):
         total_system_avg_latency_ns = 0.0
         total_system_throughput_qps = 0.0
 
-    # --- combine: pass if model passes OR BF confirms membership ---
     result = model_preds.copy()
     bf_idx = 0
     for i in range(len(result)):
@@ -140,8 +201,6 @@ def run_config_cpp(precomp, n_features, threshold, backup_fpr):
             result[i] = bool(bf_outputs[bf_idx])
             bf_idx += 1
 
-    # FP = bad passed (result=True, label=0)
-    # FN = good blocked (result=False, label=1)
     system_fpr, system_fnr = compute_metrics(result, y_test)
 
     bf_bits      = learned_bf.getMemoryBits()
@@ -169,13 +228,10 @@ def run_config_cpp(precomp, n_features, threshold, backup_fpr):
     }
 
 
-def run_standard_bf(train_df, test_df, target_fpr):
+def run_standard_bf(train_df, test_df, target_fpr, n_trials=20):
     """
-    Standard Bloom Filter baseline (membership framing):
-    Insert all good (in-set) training URLs. Query all test URLs.
-
-    FP = bad URL returned as member (dangerous)
-    FN = impossible by BF design (good URLs always found if inserted)
+    Standard Bloom Filter baseline. One batch call, timed from Python,
+    divided by batch size.
     """
     train_good = train_df.loc[train_df['label'] == 1, 'url'].tolist()
 
@@ -185,12 +241,17 @@ def run_standard_bf(train_df, test_df, target_fpr):
     test_urls   = test_df['url'].tolist()
     test_labels = test_df['label'].tolist()
 
-    results   = std_bf.query_batch(test_urls)
-    std_stats = std_bf.benchmark(test_urls, len(train_good))
+    def call_fn():
+        return std_bf.query_batch(test_urls)
 
-    fpr, _         = compute_metrics(results, test_labels)
-    memory_mb      = std_bf.getMemoryBits() / (8 * 1024 * 1024)
-    avg_latency_ns = std_stats.avg_latency_ns
-    throughput_qps = std_stats.throughput_qps
+    avg_latency_ns, throughput_qps, results = time_batched_call(
+        call_fn, n_items=len(test_urls), n_trials=n_trials
+    )
+
+    fpr, _    = compute_metrics(results, test_labels)
+    memory_mb = std_bf.getMemoryBits() / (8 * 1024 * 1024)
+
+    print(f"[Python-timed] standard BF query_batch: {avg_latency_ns:.1f} ns/query "
+          f"(mean over {n_trials} trials, batch={len(test_urls)}), {throughput_qps:.0f} qps")
 
     return fpr, memory_mb, avg_latency_ns, throughput_qps
