@@ -747,11 +747,11 @@ batch latency:   <span class="c-white">~26 microseconds/query</span></div>
       </div>
     </div>
 
-    <!-- PLOT 3 -->
+    <!-- PLOT 2 -->
     <div class="plot-wrap">
-      <img src="results/plot3_threshold.png" alt="Threshold vs system FPR and backup BF size"/>
+      <img src="results/plot2_threshold.png" alt="Threshold vs system FPR and backup BF size"/>
       <div class="plot-caption">
-        <strong>Fig 3 — Threshold Tradeoff (C++ Trigram, Target FPR = 0.01)</strong><br/>
+        <strong>Fig 2 — Threshold Tradeoff (C++ Trigram, Target FPR = 0.01)</strong><br/>
         Left: classification threshold vs achieved system FPR across all n_features values. Dashed line marks the 0.01 target.
         Right: same threshold axis vs training FN count, which directly controls backup BF size and memory.
       </div>
@@ -768,9 +768,9 @@ batch latency:   <span class="c-white">~26 microseconds/query</span></div>
       </div>
     </div>
 
-    <!-- PLOT 4 -->
+    <!-- PLOT 3 -->
     <div class="plot-wrap">
-      <img src="results/plot4_heatmap.png" alt="Memory reduction heatmap across threshold and n_features"/>
+      <img src="results/plot3_heatmap.png" alt="Memory reduction heatmap across threshold and n_features"/>
       <div class="plot-caption">
         <strong>Fig 4 — Memory Reduction Heatmap: Threshold × n_features (C++ Trigram)</strong><br/>
         Each cell shows the percentage memory reduction vs standard BF for the best backup_fpr at that
@@ -790,11 +790,11 @@ batch latency:   <span class="c-white">~26 microseconds/query</span></div>
       </div>
     </div>
 
-    <!-- PLOT 5 -->
+    <!-- PLOT 4 -->
     <div class="plot-wrap">
-      <img src="results/plot5_frontier.png" alt="Memory frontier across all FPR targets"/>
+      <img src="results/plot4_frontier.png" alt="Memory frontier across all FPR targets"/>
       <div class="plot-caption">
-        <strong>Fig 5 — Memory Frontier: All Variants Across FPR Targets</strong><br/>
+        <strong>Fig 4 — Memory Frontier: All Variants Across FPR Targets</strong><br/>
         Best-config memory for each variant plotted against target FPR on a log scale.
         The shaded region below the C++ trigram line and above the standard BF line represents
         the memory savings achieved by the learned approach.
