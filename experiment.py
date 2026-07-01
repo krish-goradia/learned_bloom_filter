@@ -6,7 +6,7 @@ import bloom
 from utils import compute_metrics, compute_memory
 
 
-def prepare_model(train_df, test_df, n_features, n_trials=20, warmup=3):
+def prepare_model(train_df, test_df, n_features, n_trials=10, warmup=3):
 
     vectorizer = HashingVectorizer(
         analyzer="char",
@@ -58,7 +58,7 @@ def prepare_model(train_df, test_df, n_features, n_trials=20, warmup=3):
     }
 
 
-def run_config(precomp, n_features, threshold, backup_fpr, n_trials=20, warmup=3):
+def run_config(precomp, n_features, threshold, backup_fpr, n_trials=10, warmup=3):
     """
     Learned Bloom Filter pipeline (membership framing):
 
@@ -157,7 +157,7 @@ def run_config(precomp, n_features, threshold, backup_fpr, n_trials=20, warmup=3
     }
 
 
-def run_standard_bf(train_df, test_df, target_fpr, n_trials=20, warmup=3):
+def run_standard_bf(train_df, test_df, target_fpr, n_trials=10, warmup=3):
     """
     Standard Bloom Filter baseline (membership framing):
     Insert all good (in-set) training URLs. Query all test URLs.

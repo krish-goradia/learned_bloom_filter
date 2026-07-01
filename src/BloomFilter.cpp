@@ -88,26 +88,26 @@ double BloomFilter::getBitsPerElement(size_t n) const{
 
 BFStats BloomFilter::benchmark(const vector<string>&testSet,size_t n) const{
     size_t test_n = testSet.size();
-    size_t warm = min((size_t)1000,test_n);
-    for(size_t i = 0;i<warm;i++){
-        contains(testSet[i]);
-    }
-    auto start = high_resolution_clock::now();
+    // size_t warm = min((size_t)1000,test_n);
+    // for(size_t i = 0;i<warm;i++){
+    //     contains(testSet[i]);
+    // }
+    //auto start = high_resolution_clock::now();
     
     for(size_t i = 0;i<test_n;i++){
         contains(testSet[i]);
     }
-    auto end = high_resolution_clock::now();
-    auto duration_ns = duration_cast<nanoseconds>(end-start).count();
+    //auto end = high_resolution_clock::now();
+    //auto duration_ns = duration_cast<nanoseconds>(end-start).count();
 
-    double avg_latency = (double)duration_ns/test_n;
-    double throughput = test_n/(duration_ns/1e9);
+    //double avg_latency = (double)duration_ns/test_n;
+    //double throughput = test_n/(duration_ns/1e9);
 
     BFStats stats;
-    stats.memory_bits = getMemoryBits();
-    stats.bits_per_element = getBitsPerElement(n);
-    stats.avg_latency_ns = avg_latency;
-    stats.throughput_qps = throughput;
+    // stats.memory_bits = getMemoryBits();
+    // stats.bits_per_element = getBitsPerElement(n);
+    // stats.avg_latency_ns = avg_latency;
+    // stats.throughput_qps = throughput;
 
     return stats;
 }

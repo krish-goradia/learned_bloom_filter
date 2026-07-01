@@ -525,12 +525,12 @@
       <div class="stat-card yellow">
         <div class="stat-val yellow">54×</div>
         <div class="stat-label">C++ kernel speedup over Python char trigram</div>
-        <div class="stat-note">461 ns vs ~26,000 ns per query</div>
+        <div class="stat-note">~0.5 microseconds vs ~26 microseconds per query</div>
       </div>
       <div class="stat-card red">
-        <div class="stat-val red">4.3×</div>
+        <div class="stat-val red">2.5×</div>
         <div class="stat-label">C++ learned BF latency overhead vs standard BF</div>
-        <div class="stat-note">~500 ns vs ~130 ns — structural cost of model + BF</div>
+        <div class="stat-note">~0.5 microseconds/query vs ~0.2 microseconds/query — structural cost of model + BF</div>
       </div>
       <div class="stat-card">
         <div class="stat-val accent">140</div>
@@ -643,9 +643,9 @@ Test:  ALL good + 20% bad (disjoint)
   n_features=n_features
 )
 avg NNZ per URL: <span class="c-white">~6</span>
-batch latency:   <span class="c-white">~7,548 ns/query</span></div>
+batch latency:   <span class="c-white">~7.5 microseconds/query</span></div>
         <div class="vec-stat-row">
-          <div class="vec-stat"><span class="vs-val">~7,548 ns</span><span class="vs-lbl">avg latency</span></div>
+          <div class="vec-stat"><span class="vs-val">~7.5 microseconds/query</span><span class="vs-lbl">amortised latency</span></div>
           <div class="vec-stat"><span class="vs-val">~130K</span><span class="vs-lbl">QPS</span></div>
           <div class="vec-stat"><span class="vs-val">~6 NNZ</span><span class="vs-lbl">per URL</span></div>
         </div>
@@ -661,8 +661,7 @@ batch latency:   <span class="c-white">~7,548 ns/query</span></div>
           <code style="color:var(--green)">://</code> that word tokens miss entirely. A URL of length L
           produces L−2 trigrams, averaging ~160 NNZ per row — <strong style="color:var(--text)">26× denser</strong>
           than word tokens. Model quality improves substantially, but latency explodes because
-          scikit-learn's sparse matrix pipeline is bottlenecked on CSR construction and batch numpy operations,
-          not true per-query inference.
+          scikit-learn's sparse matrix pipeline is bottlenecked on CSR construction and batch numpy operations.
         </p>
         <div class="code-block" style="margin-top:0.75rem;"><span class="c-green">HashingVectorizer</span>(
   analyzer=<span class="c-green">"char"</span>,
@@ -670,9 +669,9 @@ batch latency:   <span class="c-white">~7,548 ns/query</span></div>
   n_features=n_features
 )
 avg NNZ per URL: <span class="c-white">~160</span>
-batch latency:   <span class="c-white">~26,406 ns/query</span></div>
+batch latency:   <span class="c-white">~26 microseconds/query</span></div>
         <div class="vec-stat-row">
-          <div class="vec-stat"><span class="vs-val">~26,406 ns</span><span class="vs-lbl">amortised latency</span></div>
+          <div class="vec-stat"><span class="vs-val">~0.5 microseconds/query</span><span class="vs-lbl">amortised latency</span></div>
           <div class="vec-stat"><span class="vs-val">~37K</span><span class="vs-lbl">QPS</span></div>
           <div class="vec-stat"><span class="vs-val">~160 NNZ</span><span class="vs-lbl">per URL</span></div>
         </div>
@@ -688,14 +687,15 @@ batch latency:   <span class="c-white">~26,406 ns/query</span></div>
           no CSR matrix is built, no intermediate data is allocated. A rolling hash computes
           each trigram in O(1). Model weights exported from sklearn are stored in a
           <code style="color:var(--yellow)">double[]</code> array; the logit accumulates inline.
-          This gives <strong style="color:var(--text)">true per-query latency</strong>, not amortised
-          batch averages, enabling direct comparison with a production serving scenario.
+          All latency figures are measured from Python via <code>time.perf_counter_ns()</code>,
+          wrapping a single batched pybind11 call, with warmup runs before timing and the mean
+          taken over 10 trials divided by batch size — consistent methodology across all variants.
         </p>
         <div class="code-block" style="margin-top:0.75rem;"><span class="c-yellow">// rolling hash — O(1) per trigram</span>
 <span class="c-yellow">// fused logit accumulation</span>
-<span class="c-white">true latency: ~445–461 ns/query</span></div>
+<span class="c-white">amortised latency: ~0.5 microseconds/query</span></div>
         <div class="vec-stat-row">
-          <div class="vec-stat"><span class="vs-val">~461 ns</span><span class="vs-lbl">true latency</span></div>
+          <div class="vec-stat"><span class="vs-val">~0.5 microseconds</span><span class="vs-lbl">amortised latency</span></div>
           <div class="vec-stat"><span class="vs-val">~2.0M</span><span class="vs-lbl">QPS</span></div>
           <div class="vec-stat"><span class="vs-val">54×</span><span class="vs-lbl">vs Python trigram</span></div>
         </div>
@@ -707,10 +707,13 @@ batch latency:   <span class="c-white">~26,406 ns/query</span></div>
     <div style="margin-top:2rem;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:1.25rem 1.5rem;">
       <div style="font-family:var(--mono);font-size:0.7rem;color:var(--accent);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.4rem;">important · latency note</div>
       <p style="font-size:0.88rem;color:var(--muted);line-height:1.65;">
-        Python latency figures are <strong style="color:var(--text)">amortised batch averages</strong> — scikit-learn processes the entire test set at once and benefits from NumPy/BLAS parallelism.
-        A real serving system processing one URL at a time would be significantly slower.
-        C++ figures are <strong style="color:var(--text)">true per-query measurements</strong> via <code>high_resolution_clock</code> with a 1000-URL warmup before timing.
-        Only C++ numbers are directly comparable to a production serving scenario.
+        All latency figures — Python and C++ alike — are <strong style="color:var(--text)">mean amortised per-query costs</strong>
+        measured consistently from Python using <code>time.perf_counter_ns()</code>, wrapping a single batched call
+        per variant with 3 untimed warmup runs followed by 10 timed trials, divided by batch size.
+        This methodology captures the full Python↔C++ crossing overhead on both sides and reflects
+        <strong style="color:var(--text)">steady-state throughput under batch load</strong>, not single-query online latency.
+        The 54× gap between C++ and Python char trigrams reflects the architectural difference —
+        eliminating CSR construction, intermediate allocation, and generic sklearn call.
       </p>
     </div>
   </div>
@@ -741,26 +744,6 @@ batch latency:   <span class="c-white">~26,406 ns/query</span></div>
         contradicting a simple narrative of a hard crossover — the savings narrow but do not vanish.
         The char trigram Python variant sits between the C++ implementation and the word default,
         confirming that feature quality (not just vectoriser speed) drives memory efficiency.
-      </div>
-    </div>
-
-    <!-- PLOT 2 -->
-    <div class="plot-wrap">
-      <img src="results/plot2_latency.png" alt="Latency and throughput comparison across all variants"/>
-      <div class="plot-caption">
-        <strong>Fig 2 — Latency & Throughput: All Variants</strong><br/>
-        Left: average end-to-end latency per query on a log scale. Right: throughput in millions of queries per second.
-        Standard BF is the single-lookup baseline. C++ figures are true per-query; Python figures are amortised batch averages.
-      </div>
-      <div class="plot-analysis">
-        <strong>Analysis.</strong> The log scale on the left panel is necessary — the gap between Python char trigrams (~26,000 ns)
-        and the C++ kernel (~461 ns) spans nearly two orders of magnitude, making a linear scale unreadable.
-        The standard BF at ~130 ns remains the fastest option: it is a single hash lookup with no model overhead.
-        The C++ learned BF at ~500 ns total is <strong>4.3× slower</strong> than the standard BF but <strong>54× faster</strong>
-        than Python char trigrams — a result that would be invisible if only Python experiments were reported.
-        The throughput panel (right) tells the same story: C++ sustains ~2M QPS, Python word tokens ~130K QPS,
-        Python char trigrams ~37K QPS. For a system handling millions of URL checks per second,
-        only the C++ implementation is viable.
       </div>
     </div>
 
@@ -977,12 +960,12 @@ batch latency:   <span class="c-white">~26,406 ns/query</span></div>
 
       <div class="finding-card">
         <div class="finding-tag">Latency · C++ vs Python</div>
-        <p>The C++ implementation achieves <strong>~461 ns true per-query latency</strong>, compared to ~26,406 ns amortised for Python char trigrams — a 54× difference. This gap is structural: Python does a batch inference which it is optimized for and measures amortised cost, while C++ measures genuine single-URL cost. For any serving system processing URLs one at a time, only the C++ implementation is production-viable.</p>
+        <p>The C++ implementation achieves <strong>~0.5 microseconds mean amortised per-query cost</strong>, compared to ~26 microseconds for Python char trigrams — a 54× difference. Both numbers are measured identically: Python <code>time.perf_counter_ns()</code> wrapping a single batched call, 3 warmup runs, mean of 10 trials, divided by batch size. The gap is architectural — eliminating CSR construction, intermediate allocation, and generic sklearn dispatch — not a difference in measurement methodology.</p>
       </div>
 
       <div class="finding-card">
         <div class="finding-tag">Latency · Structural Cost</div>
-        <p>The C++ learned BF at ~500 ns total is <strong>4.3× slower than the standard BF</strong> at ~130 ns. This overhead is structural — the model scoring pass is an unavoidable addition to the BF lookup. The standard BF will always win on latency; the learned BF trades latency for memory.</p>
+        <p>The C++ learned BF at ~0.5 microseconds total is <strong>2.5× slower than the standard BF</strong> at ~0.2 microseconds . This overhead is structural — the model scoring pass is an unavoidable addition to the BF lookup. The standard BF will always win on latency; the learned BF trades latency for memory.</p>
       </div>
 
       <div class="finding-card">
@@ -1019,17 +1002,21 @@ batch latency:   <span class="c-white">~26,406 ns/query</span></div>
       <li>
         <span class="lim-icon">L2</span>
         <div>
-          <strong>Python latency is amortised, not per-query.</strong>
-          scikit-learn's transform and predict_proba batch the entire test set. The reported ns/query for Python variants is a lower bound on true single-URL online latency. C++ numbers are genuine per-query measurements and are the only directly comparable figures for a real serving scenario
+          <strong>All latency figures are amortised batch throughput costs, not single-query latency.</strong>
+          Every number — Python and C++ alike — is measured via <code>time.perf_counter_ns()</code> in Python,
+          wrapping a single batched pybind11 call with 3 untimed warmup runs and a mean over 10 timed trials,
+          divided by batch size. This reflects steady-state throughput under batch load.
+          A real serving system processing one URL at a time would experience higher latency on both sides
+          due to per-call Python↔C++ crossing overhead that is amortised away in the batch measurement.
         </div>
       </li>
-
 
       <li>
         <span class="lim-icon">L3</span>
         <div>
           <strong>Memory accounting is asymmetric.</strong>
-          Reported memory includes only the Logistic Regression model weights and the backup Bloom filter. Python runtime overhead, temporary data structures, and scikit-learn internal objects were not included, so the comparison focuses on the memory used by the learned Bloom filter itself rather than language-specific overhead
+          Reported memory includes only the Logistic Regression model weights and the backup Bloom filter. Python runtime overhead, temporary data structures, and scikit-learn internal objects were not included, so the comparison focuses on the memory used by the learned Bloom filter itself rather than language-specific overhead.
+        </div>
       </li>
     </ul>
   </div>

@@ -1,7 +1,6 @@
 import numpy as np
 import time
 from sklearn.linear_model import LogisticRegression
-from sklearn.feature_extraction.text import HashingVectorizer
 from sklearn.metrics import roc_auc_score
 from scipy.sparse import csr_matrix
 import bloom
@@ -15,7 +14,7 @@ from utils import compute_metrics, compute_memory
 # ONCE for the entire batch, not once per item, and the per-item average
 # we report is honest (crossing overhead amortized + real per-item work).
 # ---------------------------------------------------------------------------
-def time_batched_call(fn, n_items, n_trials=20, warmup=3):
+def time_batched_call(fn, n_items, n_trials=10, warmup=3):
     """
     fn: zero-arg callable that runs ONE full batch call
     n_items: number of queries in that batch
@@ -31,21 +30,21 @@ def time_batched_call(fn, n_items, n_trials=20, warmup=3):
     for _ in range(warmup):
         result = fn()
 
-    total_times_s = []
+    trial_times_ns = []
     for _ in range(n_trials):
-        t0 = time.perf_counter()
+        t0 = time.perf_counter_ns()
         result = fn()
-        t1 = time.perf_counter()
-        total_times_s.append(t1 - t0)
+        t1 = time.perf_counter_ns()
+        trial_times_ns.append(t1 - t0)
 
-    mean_total_s = sum(total_times_s) / len(total_times_s)
-    avg_latency_ns = (mean_total_s / n_items) * 1e9
-    throughput_qps = n_items / mean_total_s if mean_total_s > 0 else 0.0
+    mean_total_ns  = sum(trial_times_ns) / len(trial_times_ns)
+    avg_latency_ns = mean_total_ns / n_items
+    throughput_qps = n_items / (mean_total_ns / 1e9)
 
     return avg_latency_ns, throughput_qps, result
 
 
-def prepare_model_cpp(train_df, test_df, n_features, n_trials=20):
+def prepare_model_cpp(train_df, test_df, n_features, n_trials=10):
     """
     C++ fused vectorizer + scorer.
     vec.transform_and_score() is called ONCE with the full batch of test
@@ -101,54 +100,7 @@ def prepare_model_cpp(train_df, test_df, n_features, n_trials=20):
     }
 
 
-def prepare_model_sklearn(train_df, test_df, n_features, n_trials=20):
-    """
-    Baseline: sklearn HashingVectorizer + predict_proba, timed the same way
-    — one full batch call (vectorize + predict on all test URLs), timed
-    from Python, divided by batch size.
-    """
-    train_urls = train_df['url'].tolist()
-    test_urls  = test_df['url'].tolist()
-    y_train = train_df['label'].values
-    y_test  = test_df['label'].values
-
-    hv = HashingVectorizer(n_features=n_features, analyzer='char', ngram_range=(3, 3))
-    X_train = hv.transform(train_urls)
-
-    model = LogisticRegression(max_iter=1000, class_weight="balanced")
-    model.fit(X_train, y_train)
-    probs_train = model.predict_proba(X_train)[:, 1]
-
-    test_count = len(test_urls)
-
-    def call_fn():
-        X_test = hv.transform(test_urls)
-        return model.predict_proba(X_test)[:, 1]
-
-    model_avg_latency_ns, model_throughput_qps, probs_test = time_batched_call(
-        call_fn, n_items=test_count, n_trials=n_trials
-    )
-    model_total_latency_ns = model_avg_latency_ns * test_count
-
-    auc = roc_auc_score(y_test, probs_test)
-    print(f"AUC: {auc:.4f}")
-    print(f"[Python-timed] sklearn vec+predict: {model_avg_latency_ns:.1f} ns/query "
-          f"(mean over {n_trials} trials, batch={test_count}), {model_throughput_qps:.0f} qps")
-
-    return {
-        "probs_train":             probs_train,
-        "probs_test":              probs_test,
-        "y_train":                 y_train,
-        "y_test":                  y_test,
-        "train_urls":              train_urls,
-        "test_urls":               test_urls,
-        "model_total_latency_ns":  float(model_total_latency_ns),
-        "model_avg_latency_ns":    model_avg_latency_ns,
-        "model_throughput_qps":    model_throughput_qps,
-    }
-
-
-def run_config_cpp(precomp, n_features, threshold, backup_fpr, n_trials=20):
+def run_config_cpp(precomp, n_features, threshold, backup_fpr, n_trials=10):
     """
     Learned Bloom Filter pipeline. BF query_batch() is called ONCE with all
     blocked URLs as a batch; C++ loops internally. Timed from Python the
@@ -228,7 +180,7 @@ def run_config_cpp(precomp, n_features, threshold, backup_fpr, n_trials=20):
     }
 
 
-def run_standard_bf(train_df, test_df, target_fpr, n_trials=20):
+def run_standard_bf(train_df, test_df, target_fpr, n_trials=10):
     """
     Standard Bloom Filter baseline. One batch call, timed from Python,
     divided by batch size.

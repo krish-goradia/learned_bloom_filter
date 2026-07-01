@@ -27,8 +27,8 @@ vector<pair<int,float>> Vectorizer::extract_features(const string& url) const {
     vector<int> dirty;
     dirty.reserve(128);
 
-    const int      ng       = min_n;
-    const int      len      = (int)url.size();
+    const int ng       = min_n;
+    const int len      = (int)url.size();
     const uint64_t BASE     = 131;
     const uint64_t MASK     = (uint64_t)(n_features - 1);
 
@@ -85,11 +85,7 @@ CSRMatrix Vectorizer::transform(const vector<string>& urls) const {
     return csr;
 }
 
-ScoredResult Vectorizer::transform_and_score(
-    const vector<string>& urls,
-    const vector<double>& weights,
-    double intercept) const
-{
+ScoredResult Vectorizer::transform_and_score(const vector<string>& urls, const vector<double>& weights, double intercept) const {
     size_t n = urls.size();
 
     vector<float> counts(n_features, 0.0f);
@@ -144,24 +140,24 @@ ScoredResult Vectorizer::transform_and_score(
     };
 
     // warmup
-    size_t warm = min((size_t)1000, n);
-    for (size_t i = 0; i < warm; i++) score_one(urls[i]);
+    // size_t warm = min((size_t)1000, n);
+    // for (size_t i = 0; i < warm; i++) score_one(urls[i]);
 
     // timed run with prefetch
     vector<double> probs(n);
-    auto start = high_resolution_clock::now();
+    //auto start = high_resolution_clock::now();
     for (size_t i = 0; i < n; i++) {
         if (i + 1 < n)
             PREFETCH(urls[i + 1].c_str());
         probs[i] = score_one(urls[i]);
     }
-    auto end = high_resolution_clock::now();
+    //auto end = high_resolution_clock::now();
 
-    double total_ns = (double)duration_cast<nanoseconds>(end - start).count();
+    //double total_ns = (double)duration_cast<nanoseconds>(end - start).count();
 
     ScoredResult result;
-    result.probs          = probs;
-    result.avg_latency_ns = total_ns / n;
-    result.throughput_qps = n / (total_ns / 1e9);
+    result.probs = probs;
+    // result.avg_latency_ns = total_ns / n;
+    // result.throughput_qps = n / (total_ns / 1e9);
     return result;
 }
